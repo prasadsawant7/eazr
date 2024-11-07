@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  password_hash String?
+  hashed_rt     String?
+  role          Role
+  created_at    DateTime @default(now())
+
+  BorrowRecords BorrowRecord[]
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  LIBRARIAN
+  MEMBER
+}
+
+model Book {
+  id             String   @id @default(uuid())
+  isbn           String   @unique
+  title          String
+  author         String
+  genre          String
+  published_date DateTime
+  availability   Boolean  @default(true)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  BorrowRecords BorrowRecord[]
+
+  @@map("books")
+}
+
+model BorrowRecord {
+  id            String       @id @default(uuid())
+  user_id       String
+  book_id       String
+  borrowed_date DateTime     @default(now())
+  due_date      DateTime
+  returned_date DateTime?
+  status        BorrowStatus
+  created_at    DateTime     @default(now())
+  updated_at    DateTime     @updatedAt
+
+  User User @relation(fields: [user_id], references: [id])
+  Book Book @relation(fields: [book_id], references: [id])
+
+  @@map("borrow_records")
+}
+
+enum BorrowStatus {
+  BORROWED
+  RETURNED
+  OVERDUE
+}
