@@ -10,6 +10,7 @@ import { DatabaseService } from 'src/database/database.service';
 import { AuthResponse, Tokens } from '../types';
 import { LocalAuthSignupDTO, LocalAuthSigninDTO } from '../dto';
 import * as argon2 from 'argon2';
+import { hashData } from 'src/utils';
 
 @Injectable()
 export class LocalAuthService {
@@ -31,7 +32,7 @@ export class LocalAuthService {
       let newUser: User;
 
       if (!user) {
-        const hash = await this.hashData(dto.password);
+        const hash = await hashData(dto.password);
 
         newUser = await this.dbService.user.create({
           data: {
@@ -130,7 +131,7 @@ export class LocalAuthService {
   }
 
   async updateRTHash(userId: string, rt: string) {
-    const hash = await this.hashData(rt);
+    const hash = await hashData(rt);
     await this.dbService.user.update({
       where: {
         id: userId,
@@ -139,10 +140,6 @@ export class LocalAuthService {
         hashed_rt: hash,
       },
     });
-  }
-
-  async hashData(data: string) {
-    return await argon2.hash(data);
   }
 
   async getTokens(userId: string, email: string, role: Role): Promise<Tokens> {

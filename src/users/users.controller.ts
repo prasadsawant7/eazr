@@ -9,43 +9,46 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiTags } from '@nestjs/swagger';
-import { AdminGuard } from 'src/common/guards';
+import { AdminGuard, LibrarianGuard } from 'src/common/guards';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UserResponseDto } from './dto/user-response.dto';
 
 @ApiTags('Users')
 @Controller('users')
+@UseGuards(AdminGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @UseGuards(AdminGuard)
   @Post()
-  create(@Body() createUserDto: CreateUserDto) {
+  create(@Body() createUserDto: CreateUserDto): Promise<UserResponseDto> {
     return this.usersService.create(createUserDto);
   }
 
-  @UseGuards(AdminGuard)
+  @UseGuards(LibrarianGuard)
   @Get()
-  findAll() {
+  findAll(): Promise<UserResponseDto[]> {
     return this.usersService.findAll();
   }
 
-  @UseGuards(AdminGuard)
+  @UseGuards(LibrarianGuard)
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
+  findOne(@Param('id') id: string): Promise<UserResponseDto> {
+    return this.usersService.findOne(id);
   }
 
-  @UseGuards(AdminGuard)
+  @UseGuards(LibrarianGuard)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<UserResponseDto> {
+    return this.usersService.update(id, updateUserDto);
   }
 
-  @UseGuards(AdminGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+    return this.usersService.remove(id);
   }
 }
