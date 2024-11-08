@@ -23,10 +23,7 @@ import jwtConfig from './config/jwt.config';
       isGlobal: true,
       expandVariables: true,
       load: [clientConfig, serverConfig, dbConfig, jwtConfig],
-      envFilePath:
-        process.env.NODE_ENV === 'development'
-          ? '.env'
-          : `.env.${process.env.NODE_ENV}`,
+      envFilePath: '.env',
     }),
     ThrottlerModule.forRoot([
       {
