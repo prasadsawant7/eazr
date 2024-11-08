@@ -2,7 +2,7 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { DatabaseService } from 'src/database/database.service';
-import { Role, User } from '@prisma/client';
+import { BorrowRecord, BorrowStatus, Role } from '@prisma/client';
 import { hashData } from 'src/utils';
 import { UserResponseDto } from './dto/user-response.dto';
 
@@ -21,24 +21,25 @@ export class UsersService {
     if (!user) {
       const hash = await hashData(dto.password);
 
-      const newUser: User = await this.dbService.user.create({
+      const newUser = await this.dbService.user.create({
         data: {
           name: dto.name,
           email: dto.email,
           password_hash: hash,
           role: dto.role as Role,
         },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          created_at: true,
+        },
       });
 
-      return {
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role,
-        created_at: newUser.created_at,
-      };
+      return newUser;
     } else {
-      throw new ConflictException('User already exists');
+      throw new ConflictException('User already exists!');
     }
   }
 
@@ -56,7 +57,7 @@ export class UsersService {
     return users;
   }
 
-  async findOne(id: string): Promise<UserResponseDto> {
+  async findOne(id: string): Promise<UserResponseDto | { message: string }> {
     const user = await this.dbService.user.findUnique({
       where: {
         id: id,
@@ -70,20 +71,68 @@ export class UsersService {
       },
     });
 
+    if (!user) {
+      return { message: "User doesn't exist!" };
+    }
+
     return user;
   }
 
-  async update(
+  async findUserHistory(
     id: string,
-    updateUserDto: UpdateUserDto,
-  ): Promise<UserResponseDto> {
+    status: BorrowStatus,
+  ): Promise<BorrowRecord[] | { message: string }> {
+    if (status) {
+      if (!Object.values(BorrowStatus).includes(status)) {
+        return { message: 'Invalid status value!' };
+      }
+
+      const userHistory = await this.dbService.borrowRecord.findMany({
+        where: {
+          user_id: id,
+          status: status as BorrowStatus,
+        },
+        include: {
+          Book: {
+            select: {
+              id: true,
+              isbn: true,
+              title: true,
+              author: true,
+            },
+          },
+        },
+      });
+
+      return userHistory;
+    }
+
+    const userHistory = await this.dbService.borrowRecord.findMany({
+      where: {
+        user_id: id,
+      },
+      include: {
+        Book: {
+          select: {
+            isbn: true,
+            title: true,
+            author: true,
+          },
+        },
+      },
+    });
+
+    return userHistory;
+  }
+
+  async update(id: string, dto: UpdateUserDto): Promise<UserResponseDto> {
     const updateData: UpdateUserDto & { password_hash: string } = {
-      ...updateUserDto,
+      ...dto,
       password_hash: '',
     };
 
-    if (updateUserDto.password) {
-      const hash = await hashData(updateUserDto.password);
+    if (dto.password) {
+      const hash = await hashData(dto.password);
       updateData.password_hash = hash;
       delete updateData.password;
     } else {
@@ -107,7 +156,7 @@ export class UsersService {
     return updatedUser;
   }
 
-  async remove(id: string) {
+  async remove(id: string): Promise<{ message: string }> {
     const deletedUser = await this.dbService.user.delete({
       where: {
         id: id,

@@ -22,15 +22,15 @@ import { ApiTags } from '@nestjs/swagger';
 export class LocalAuthController {
   constructor(private localAuthService: LocalAuthService) {}
 
-  @Public()
   @Post('signup')
+  @Public()
   @HttpCode(HttpStatus.CREATED)
   signupLocal(@Body() dto: LocalAuthSignupDTO): Promise<AuthResponse> {
     return this.localAuthService.signupLocal(dto);
   }
 
-  @Public()
   @Post('signin')
+  @Public()
   @HttpCode(HttpStatus.OK)
   signinLocal(@Body() dto: LocalAuthSigninDTO): Promise<AuthResponse> {
     return this.localAuthService.signinLocal(dto);
@@ -42,9 +42,8 @@ export class LocalAuthController {
     return this.localAuthService.logout(userId);
   }
 
-  @Public()
-  @UseGuards(RTGuard)
   @Post('refresh')
+  @UseGuards(RTGuard)
   @HttpCode(HttpStatus.OK)
   refreshTokens(
     @GetCurrentUserId() userId: string,

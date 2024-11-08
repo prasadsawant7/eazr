@@ -3,52 +3,71 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Delete,
   UseGuards,
+  Patch,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { BorrowRecordsService } from './borrow-records.service';
 import { CreateBorrowRecordDto } from './dto/create-borrow-record.dto';
-import { UpdateBorrowRecordDto } from './dto/update-borrow-record.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { AdminGuard } from 'src/common/guards';
+import { BorrowRecord } from '@prisma/client';
 
 @ApiTags('Borrow Records')
 @Controller('borrow-records')
 export class BorrowRecordsController {
   constructor(private readonly borrowRecordsService: BorrowRecordsService) {}
 
-  @UseGuards(AdminGuard)
+  /**
+   * [Member, Librarian, Admin] can borrow book.
+   */
   @Post()
-  create(@Body() createBorrowRecordDto: CreateBorrowRecordDto) {
+  @HttpCode(HttpStatus.CREATED)
+  create(
+    @Body() createBorrowRecordDto: CreateBorrowRecordDto,
+  ): Promise<BorrowRecord | { message: string }> {
     return this.borrowRecordsService.create(createBorrowRecordDto);
   }
 
-  @UseGuards(AdminGuard)
+  /**
+   * [Admin] can view all borrowing records.
+   */
   @Get()
-  findAll() {
+  @UseGuards(AdminGuard)
+  @HttpCode(HttpStatus.OK)
+  findAll(): Promise<BorrowRecord[]> {
     return this.borrowRecordsService.findAll();
   }
 
-  @UseGuards(AdminGuard)
+  /**
+   * [Admin] can view specific borrowing records.
+   */
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.borrowRecordsService.findOne(+id);
+  @UseGuards(AdminGuard)
+  @HttpCode(HttpStatus.OK)
+  findOne(@Param('id') id: string): Promise<BorrowRecord> {
+    return this.borrowRecordsService.findOne(id);
   }
 
-  @UseGuards(AdminGuard)
+  /**
+   * [Member, Librarian, Admin] can return a book.
+   */
   @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateBorrowRecordDto: UpdateBorrowRecordDto,
-  ) {
-    return this.borrowRecordsService.update(+id, updateBorrowRecordDto);
+  @HttpCode(HttpStatus.OK)
+  returnBook(@Param('id') id: string): Promise<{ message: string }> {
+    return this.borrowRecordsService.returnBook(id);
   }
 
-  @UseGuards(AdminGuard)
+  /**
+   * [Admin] can delete borrow record.
+   */
   @Delete(':id')
+  @UseGuards(AdminGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id') id: string) {
-    return this.borrowRecordsService.remove(+id);
+    return this.borrowRecordsService.remove(id);
   }
 }

@@ -56,7 +56,7 @@ model BorrowRecord {
   borrowed_date DateTime     @default(now())
   due_date      DateTime
   returned_date DateTime?
-  status        BorrowStatus
+  status        BorrowStatus @default(BORROWED)
   created_at    DateTime     @default(now())
   updated_at    DateTime     @updatedAt
 

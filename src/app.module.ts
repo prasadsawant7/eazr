@@ -2,18 +2,20 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { HealthModule } from './health/health.module';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { BooksModule } from './books/books.module';
-import serverConfig from './config/server.config';
-import dbConfig from './config/db.config';
 import { LoggerMiddleware } from './common/middlewares';
-import clientConfig from './config/client.config';
-import jwtConfig from './config/jwt.config';
 import { ATGuard } from './common/guards';
 import { BorrowRecordsModule } from './borrow-records/borrow-records.module';
+import { BookStatusScheduler } from './scheduled-tasks/book-status.scheduler';
+import serverConfig from './config/server.config';
+import dbConfig from './config/db.config';
+import clientConfig from './config/client.config';
+import jwtConfig from './config/jwt.config';
 
 @Module({
   imports: [
@@ -32,6 +34,7 @@ import { BorrowRecordsModule } from './borrow-records/borrow-records.module';
         limit: 10,
       },
     ]),
+    ScheduleModule.forRoot(),
     HealthModule,
     DatabaseModule,
     AuthModule,
@@ -46,6 +49,7 @@ import { BorrowRecordsModule } from './borrow-records/borrow-records.module';
       useClass: ATGuard,
     },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    BookStatusScheduler,
   ],
 })
 export class AppModule implements NestModule {
